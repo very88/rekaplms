@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rekap Detail Kelas - SMANJO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            background-color: #f8fafc; 
+            background-image: radial-gradient(circle at 50% 0%, #ffffff 0%, #f1f5f9 100%); 
+            color: #334155; 
+            min-height: 100vh; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        }
+        .glass-panel { 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(226, 232, 240, 0.8); 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); 
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- Navbar -->
+    <nav class="glass-panel rounded-2xl p-4 mb-8 flex justify-between items-center flex-wrap gap-4">
+        <div class="flex items-center gap-4">
+            <a href="dashboard-monitoring.html" class="text-slate-400 hover:text-slate-700 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </a>
+            <div>
+                <span class="text-xs font-bold text-sky-600 uppercase tracking-wider">Mode Monitoring Publik</span>
+                <div class="text-xl font-bold text-slate-800" id="namaKelasTitle">Memuat Rekap Kelas...</div>
+            </div>
+        </div>
+        <a href="dashboard-monitoring.html" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-sm px-4 py-2 rounded-xl transition-colors">📊 Kembali ke Dashboard Utama</a>
+    </nav>
+
+    <!-- Kartu Statistik Rekap Kelas -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="glass-panel p-5 rounded-2xl border-l-4 border-emerald-500 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase">Siswa Terdaftar</p>
+            <h3 class="text-3xl font-black text-slate-800 mt-1" id="val_siswa">-</h3>
+        </div>
+        <div class="glass-panel p-5 rounded-2xl border-l-4 border-sky-500 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase">Total Materi</p>
+            <h3 class="text-3xl font-black text-slate-800 mt-1" id="val_materi">-</h3>
+        </div>
+        <div class="glass-panel p-5 rounded-2xl border-l-4 border-amber-500 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase">Total Tugas</p>
+            <h3 class="text-3xl font-black text-slate-800 mt-1" id="val_tugas">-</h3>
+        </div>
+        <div class="glass-panel p-5 rounded-2xl border-l-4 border-indigo-500 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase">Pengumpulan Tugas</p>
+            <h3 class="text-3xl font-black text-slate-800 mt-1" id="val_kumpul">-</h3>
+        </div>
+    </div>
+
+    <!-- Informasi Detail Pengampu & Status -->
+    <div class="glass-panel rounded-2xl p-6 shadow-sm mb-8 space-y-4">
+        <h2 class="text-lg font-bold text-slate-800 pb-2 border-b border-slate-100 flex items-center gap-2">🏫 Informasi Akademik & Pengampu</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div class="bg-white/80 p-4 rounded-xl border border-slate-200">
+                <span class="text-xs text-slate-400 block font-semibold uppercase mb-1">Wali Kelas / Guru Pengampu</span>
+                <strong class="text-slate-800 text-base" id="infoGuru">Memuat...</strong>
+            </div>
+            <div class="bg-white/80 p-4 rounded-xl border border-slate-200">
+                <span class="text-xs text-slate-400 block font-semibold uppercase mb-1">Status Pemantauan Sistem</span>
+                <strong class="text-emerald-600 text-base">🟢 Sinkron Otomatis (Real-time)</strong>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyTICgF-NqTCpCw3A38R_wgxJ9AZZiXB9Y1yYaGG81LtyaRRUG95qBimEZ_5snTYoxj/exec';
+
+        window.onload = async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetNamaKelas = urlParams.get('nama');
+
+            if (!targetNamaKelas) {
+                alert("Nama kelas tidak valid!");
+                window.location.href = 'dashboard-monitoring.html';
+                return;
+            }
+
+            document.getElementById('namaKelasTitle').innerText = decodeURIComponent(targetNamaKelas);
+
+            try {
+                // Tarik data global dari Code.gs yang sudah terbukti sukses & stabil
+                const res = await fetch(scriptURL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'get_global_monitoring_data' })
+                });
+                const result = await res.json();
+
+                if (result.status === 'success' && result.classes) {
+                    const decodedTarget = decodeURIComponent(targetNamaKelas).trim().toLowerCase();
+                    // Cari data kelas yang namanya cocok dengan yang diklik
+                    const matchedClass = result.classes.find(c => String(c.nama_kelas).trim().toLowerCase() === decodedTarget);
+
+                    if (matchedClass) {
+                        document.getElementById('val_siswa').innerText = matchedClass.total_siswa || 0;
+                        document.getElementById('val_materi').innerText = matchedClass.total_materi || 0;
+                        document.getElementById('val_tugas').innerText = matchedClass.total_tugas || 0;
+                        document.getElementById('val_kumpul').innerText = matchedClass.total_pengumpulan || 0;
+                        document.getElementById('infoGuru').innerText = matchedClass.nama_guru || 'Guru Pengampu';
+                    } else {
+                        document.getElementById('infoGuru').innerText = 'Data detail kelas tidak ditemukan di server.';
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('infoGuru').innerText = 'Gagal memuat data rekap dari server.';
+            }
+        };
+    </script>
+</body>
+</html>

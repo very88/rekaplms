@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Monitoring Kurikulum & Kepala Sekolah - SMANJO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js untuk Grafik Interaktif -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { 
+            background-color: #f8fafc; 
+            background-image: radial-gradient(circle at 50% 0%, #ffffff 0%, #f1f5f9 100%); 
+            color: #334155; 
+            min-height: 100vh; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        }
+        .glass-panel { 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(226, 232, 240, 0.8); 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); 
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- Header / Navbar -->
+    <nav class="glass-panel rounded-2xl p-6 mb-8 flex justify-between items-center flex-wrap gap-4">
+        <div>
+            <div class="text-xs font-bold text-sky-600 uppercase tracking-wider mb-1">Pusat Pemantauan Akademik SMANJO</div>
+            <h1 class="text-2xl font-black text-slate-800">📊 Dashboard Monitoring Eksekutif</h1>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="muatDataMonitoring()" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors shadow-sm cursor-pointer flex items-center gap-2">🔄 Refresh Data</button>
+            <a href="index.html" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors">🔐 Login Utama</a>
+        </div>
+    </nav>
+
+    <!-- Statistik Utama (Cards) -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <div class="glass-panel p-5 rounded-2xl border-l-4 border-sky-500">
+            <p class="text-xs font-bold text-slate-400 uppercase">Total Kelas</p>
+            <h3 class="text-3xl font-black text-slate-800 mt-1" id="stat_kelas">-</h3>
+        </div>
+        <div class="glass-panel p-5 rounded-2xl border-l-4 border-emerald-500">
+            <p class="text-xs font-bold text-slate-400 uppercase">Siswa Terdaftar</p>
+            <h3 class="text-3xl font-black text-slate-800 mt-1" id="stat_siswa">-</h3>
+        </div>
+        <div class="glass-panel p-5 rounded-2xl border-l-4 border-indigo-500">
+            <p class="text-xs font-bold text-slate-400 uppercase">Materi Diposting</p>
+            <h3 class="text-3xl font-black text-slate-800 mt-1" id="stat_materi">-</h3>
+        </div>
+        <div class="glass-panel p-5 rounded-2xl border-l-4 border-amber-500">
+            <p class="text-xs font-bold text-slate-400 uppercase">Tugas Dibuat</p>
+            <h3 class="text-3xl font-black text-slate-800 mt-1" id="stat_tugas">-</h3>
+        </div>
+        <div class="glass-panel p-5 rounded-2xl border-l-4 border-cyan-500">
+            <p class="text-xs font-bold text-slate-400 uppercase">Pengumpulan Tugas</p>
+            <h3 class="text-3xl font-black text-slate-800 mt-1" id="stat_submission">-</h3>
+        </div>
+        <div class="glass-panel p-5 rounded-2xl border-l-4 border-rose-500">
+            <p class="text-xs font-bold text-slate-400 uppercase">Rekap Absensi</p>
+            <h3 class="text-3xl font-black text-slate-800 mt-1" id="stat_absensi">-</h3>
+        </div>
+    </div>
+
+    <!-- Bagian Grafik Interaktif Modern -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Grafik Aktivitas Pembelajaran per Kelas -->
+        <div class="glass-panel rounded-2xl p-6">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">📈 Grafik Aktivitas Akademik per Kelas</h2>
+            <div class="relative h-72 w-full">
+                <canvas id="chartAktivitasKelas"></canvas>
+            </div>
+        </div>
+        <!-- Grafik Distribusi Konten LMS -->
+        <div class="glass-panel rounded-2xl p-6">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100 flex items-center gap-2">🍩 Komposisi Konten & Partisipasi LMS</h2>
+            <div class="relative h-72 w-full flex justify-center">
+                <canvas id="chartKomposisi"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bagian Info Cards Kelas (Interaktif dengan Health Badge) -->
+    <div class="glass-panel rounded-2xl p-6 shadow-sm mb-8">
+        <div class="flex justify-between items-center mb-6 pb-3 border-b border-slate-100 flex-wrap gap-4">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">🏫 Direktori Kelas Aktif & Status Kesehatan</h2>
+            <p class="text-xs text-slate-500">Klik kartu kelas untuk melihat detail rekapitulasi.</p>
+        </div>
+        
+        <div id="containerInfoCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full text-center py-8 text-slate-400 italic">Memuat data kelas...</div>
+        </div>
+    </div>
+
+    <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyTICgF-NqTCpCw3A38R_wgxJ9AZZiXB9Y1yYaGG81LtyaRRUG95qBimEZ_5snTYoxj/exec';
+        let barChartInstance = null;
+        let pieChartInstance = null;
+
+        window.onload = function() {
+            muatDataMonitoring();
+        };
+
+        async function muatDataMonitoring() {
+            try {
+                const res = await fetch(scriptURL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'get_global_monitoring_data' })
+                });
+                const result = await res.json();
+
+                if (result.status === 'success') {
+                    const sum = result.summary;
+                    document.getElementById('stat_kelas').innerText = sum.total_kelas;
+                    document.getElementById('stat_siswa').innerText = sum.total_siswa;
+                    document.getElementById('stat_materi').innerText = sum.total_materi;
+                    document.getElementById('stat_tugas').innerText = sum.total_tugas;
+                    document.getElementById('stat_submission').innerText = sum.total_submission;
+                    document.getElementById('stat_absensi').innerText = sum.total_absensi;
+
+                    renderInfoCards(result.classes || []);
+                    renderCharts(result.classes || [], sum);
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('containerInfoCards').innerHTML = `<div class="col-span-full text-center py-6 text-rose-500 font-semibold">Gagal memuat data dari server.</div>`;
+            }
+        }
+
+        function renderInfoCards(classes) {
+            const container = document.getElementById('containerInfoCards');
+            if (classes.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400">Belum ada data kelas yang tercatat.</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            classes.forEach((cls) => {
+                const encodedNama = encodeURIComponent(cls.nama_kelas);
+
+                // --- LOGIKA CLASS HEALTH BADGE ---
+                // Hitung potensi maksimal pengumpulan (Total Siswa x Total Tugas)
+                const maxPotensi = (cls.total_siswa || 0) * (cls.total_tugas || 0);
+                let rasio = maxPotensi > 0 ? (cls.total_pengumpulan / maxPotensi) * 100 : 0;
+
+                let badgeHTML = '';
+                if (maxPotensi === 0 || rasio === 0) {
+                    badgeHTML = `<span class="bg-slate-100 text-slate-600 border border-slate-200 font-bold px-2 py-0.5 rounded-full text-[10px]">⚪ Belum Ada Aktivitas</span>`;
+                } else if (rasio >= 75) {
+                    badgeHTML = `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2 py-0.5 rounded-full text-[10px]">🟢 Sangat Aktif</span>`;
+                } else if (rasio >= 40) {
+                    badgeHTML = `<span class="bg-amber-50 text-amber-700 border border-amber-200 font-bold px-2 py-0.5 rounded-full text-[10px]">🟡 Cukup Aktif</span>`;
+                } else {
+                    badgeHTML = `<span class="bg-rose-50 text-rose-700 border border-rose-200 font-bold px-2 py-0.5 rounded-full text-[10px]">🔴 Perlu Perhatian</span>`;
+                }
+
+                container.innerHTML += `
+                    <div class="glass-panel p-5 rounded-2xl border border-slate-200 card-hover flex flex-col justify-between gap-4 bg-white/60">
+                        <div>
+                            <div class="flex justify-between items-start gap-2 mb-2">
+                                <h3 class="font-bold text-slate-800 text-base">${cls.nama_kelas}</h3>
+                                ${badgeHTML}
+                            </div>
+                            <p class="text-xs font-semibold text-sky-600 mb-3">👨‍🏫 Wali Kelas: ${cls.nama_guru}</p>
+                            <p class="text-[11px] text-slate-500 mb-4">👥 Jumlah Siswa: <strong class="text-slate-700">${cls.total_siswa} Orang</strong></p>
+                            
+                            <div class="grid grid-cols-3 gap-2 text-center text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                <div>
+                                    <span class="block text-slate-400 font-medium">Materi</span>
+                                    <strong class="text-slate-800 text-sm">${cls.total_materi}</strong>
+                                </div>
+                                <div class="border-x border-slate-200">
+                                    <span class="block text-slate-400 font-medium">Tugas</span>
+                                    <strong class="text-slate-800 text-sm">${cls.total_tugas}</strong>
+                                </div>
+                                <div>
+                                    <span class="block text-slate-400 font-medium">Kumpul</span>
+                                    <strong class="text-slate-800 text-sm">${cls.total_pengumpulan}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="detail-monitoring-kelas.html?nama=${encodedNama}" class="w-full text-center bg-slate-100 hover:bg-sky-500 hover:text-white text-slate-700 text-xs font-bold py-2 rounded-xl transition-colors cursor-pointer border border-slate-200 block">
+                            🔍 Lihat Detail Kelas
+                        </a>
+                    </div>
+                `;
+            });
+        }
+
+        function renderCharts(classes, summary) {
+            const labels = classes.map(c => c.nama_kelas);
+            const dataMateri = classes.map(c => c.total_materi);
+            const dataTugas = classes.map(c => c.total_tugas);
+            const dataSubmission = classes.map(c => c.total_pengumpulan);
+
+            const ctxBar = document.getElementById('chartAktivitasKelas').getContext('2d');
+            if (barChartInstance) barChartInstance.destroy();
+
+            barChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: labels.length > 0 ? labels : ['Belum Ada Kelas'],
+                    datasets: [
+                        { label: 'Materi', data: dataMateri.length > 0 ? dataMateri : [0], backgroundColor: '#38bdf8', borderRadius: 6 },
+                        { label: 'Tugas', data: dataTugas.length > 0 ? dataTugas : [0], backgroundColor: '#fbbf24', borderRadius: 6 },
+                        { label: 'Pengumpulan', data: dataSubmission.length > 0 ? dataSubmission : [0], backgroundColor: '#6366f1', borderRadius: 6 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+                    scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
+                }
+            });
+
+            const ctxPie = document.getElementById('chartKomposisi').getContext('2d');
+            if (pieChartInstance) pieChartInstance.destroy();
+
+            pieChartInstance = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Total Materi', 'Total Tugas', 'Total Pengumpulan', 'Total Absensi'],
+                    datasets: [{
+                        data: [summary.total_materi, summary.total_tugas, summary.total_submission, summary.total_absensi],
+                        backgroundColor: ['#38bdf8', '#fbbf24', '#6366f1', '#f43f5e'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
